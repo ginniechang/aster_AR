@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>深空小朋友_黎深</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://unpkg.com/aframe-chromakey-material/dist/aframe-chromakey-material.min.js"></script>
+  <style>
+    #touch-layer {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 9999; display: none; cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="touch-layer"></div>
+
+  <a-scene 
+    mindar-image="imageTargetSrc: aster.mind;" 
+    vr-mode-ui="enabled: false" 
+    device-orientation-permission-ui="enabled: false">
+    
+    <a-assets>
+      <video id="v1" src="aster.mp4" loop crossorigin="anonymous" playsinline muted></video>
+      <video id="v2" src="aster2.mp4" loop crossorigin="anonymous" playsinline muted></video>
+      <audio id="bgm" src="aster.mp3" loop crossorigin="anonymous"></audio>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-video 
+        id="plane1" 
+        src="#v1" 
+        visible="true"
+        material="shader: chromakey; color: 0 1 0; alphaTest: 0.5; transparent: true"
+        width="1" height="1" 
+        position="0 0 0">
+      </a-video>
+
+      <a-video 
+        id="plane2" 
+        src="#v2" 
+        visible="false"
+        material="shader: chromakey; color: 0 1 0; alphaTest: 0.5; transparent: true"
+        width="1" height="1" 
+        position="0 0 0">
+      </a-video>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const v1 = document.getElementById('v1');
+    const v2 = document.getElementById('v2');
+    const bgm = document.getElementById('bgm');
+    const plane1 = document.getElementById('plane1');
+    const plane2 = document.getElementById('plane2');
+    const touchLayer = document.getElementById('touch-layer');
+    const sceneEl = document.querySelector('a-scene');
+    
+    let isSwitched = false;
+    let isTargetVisible = false;
+
+    sceneEl.addEventListener("targetFound", () => {
+      isTargetVisible = true;
+      touchLayer.style.display = 'block';
+      v1.play();
+      if (isSwitched) v2.play();
+    });
+
+    sceneEl.addEventListener("targetLost", () => {
+      isTargetVisible = false;
+      touchLayer.style.display = 'none';
+      v1.pause();
+      v2.pause();
+      bgm.pause();
+    });
+
+    touchLayer.addEventListener('click', () => {
+      if (!isTargetVisible || isSwitched) return;
+
+      // 音樂與解鎖
+      bgm.play();
+      v1.muted = false;
+      v2.muted = false;
+
+      // 切換顯示狀態
+      isSwitched = true;
+      plane1.setAttribute('visible', 'false');
+      plane2.setAttribute('visible', 'true');
+      
+      v1.pause();
+      v2.currentTime = 0;
+      v2.play();
+
+      // 5秒後切換回來
+      setTimeout(() => {
+        plane2.setAttribute('visible', 'false');
+        plane1.setAttribute('visible', 'true');
+        
+        v2.pause();
+        v1.play();
+        isSwitched = false;
+      }, 5000);
+    });
+  </script>
+</body>
+</html>
